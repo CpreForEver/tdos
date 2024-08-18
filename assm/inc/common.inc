@@ -1,0 +1,5 @@
+
+
+START_PROMPT DB ":", 0x0
+COPYRIGHT DB ":Copyright 2024", 0x0D, 0x0A, 0x0
+START_BOOT_MSG DB ":TDOS Bootload v0.1", 0x0D, 0x0A, 0x0
