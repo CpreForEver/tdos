@@ -16,3 +16,15 @@ markdown files.
 * [] Devise plan for other standard libraries
 * [] Launch vbash
 
+# TOOLS
+
+## bochs
+Installed using debian and compiling the source code for bochs 2.8. Compilation was done using 
+'''
+_$ .configure --enable_debugger --enable_debugger_gui
+_$ sudo make install -j12
+'''
+
+See bochsrc.txt for configuration details
+
+NOTE: Still not working, the memory at 0x7c00 is not populated with my bootloader yet and I'm not sure why
