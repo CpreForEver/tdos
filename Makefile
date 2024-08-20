@@ -1,12 +1,13 @@
 
-bootloader:
-	make -C assm all
+all: assm image
 
-disk:
-	make -C packaging image
+assm:
+	make -C boot all
 
-all: bootloader disk
+image: assm 
+	make -C packaging all
+
 
 clean: 
-	make -C assm clean
+	make -C boot clean
 	make -C packaging clean
