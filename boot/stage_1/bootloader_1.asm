@@ -2,32 +2,51 @@
 ; file: bootloader_1.asm
 ; description: init point for tdos bootloader
 USE16
-ORG 0x7C00
+ORG 0x600
+
+; NOTE:For BOCHS
+; To set a breakpoint, make sure bochs has debugging enabled
+; and use xchg bx, bx
+; Use x /320h 0x1000
+; debug at 0x674
+; debug at 0x682
+
 
 ; helpful macros
 INCLUDE '../inc/macros.mac'
 
-MAGIC = 0x51A1C0DE
-INITSEG = 0x9200
 
-DAP_PACKET EQU 0x7E00
+DAP_PACKET EQU 0800h		; 800 ensures we are above our 512 bytes
 VIRTUAL AT DAP_PACKET
-	DAP_PACKET.SIZE:	DB	?
-	DAP_PACKET.RES:		DB	0x0
-	DAP_PACKET.COUNT:	DW	?
-	DAP_PACKET.SEG:		DW	?
+	DAP_PACKET.SIZE:	DW	?
+	DAP_PACKET.COUNT:	DW	? 	
+	DAP_PACKET.OFFS:	DW	?
+	DAP_PACKET.SEGM:	DW	?
 	DAP_PACKET.SECT0:	DW	?
 	DAP_PACKET.SECT1:	DW	?
 	DAP_PACKET.SECT2:	DW	?
 	DAP_PACKET.SECT3:	DW	?
 END VIRTUAL
 
+START:
+	; relocate to a safer location
+	CLI			; clear interrupts
+	CLD
+	MOV AX, 600h		; establish our stack
+	MOV SP, AX		; stack pointer
+	MOV BP, AX		; base pointer
+	MOV SI, 7C00h
+	MOV DI, AX		; we can do this because the stack moves
+				; in two directions
+	MOV CX, 256		; copy our 512 bytes to our new location
+	REP MOVSW
+	JMP 0:MAIN		; jump with the ORG in mind
+
 MAIN:
 	; set up the function stack
 	XOR AX, AX
-	MOV ES, AX
-	MOV DS, AX
 	XOR BX, BX
+	XOR CX, CX
 
 	; Clear the screen and print the initial bootloader messages
 	CALL CLEAR_SCREEN
@@ -38,82 +57,57 @@ MAIN:
 	; Locate the 2nd stage bootloader and launch
 .CHECK_DISK:
 	MOV SI, TEST_EXT
-	MOV AH, 0x41
-	MOV DL, 0x80
-	MOV BX, 0x55AA
-	INT 0x13
+	MOV AH, 41h
+	MOV DL, 80h
+	MOV BX, 055AAh
+	INT 13h
 	JC PANIC
 
-	MOV WORD [DAP_PACKET.SEG], 0x80
-.READ_EXT:
-	MOV WORD [DAP_PACKET.SIZE], 0x10
-	MOV WORD [DAP_PACKET.COUNT], 0x60
-	MOV WORD [DAP_PACKET.SECT0], 0x0
-	MOV WORD [DAP_PACKET.SECT1], 0x2
-	MOV WORD [DAP_PACKET.SECT2], 0x0
-	MOV WORD [DAP_PACKET.SECT3], 0x0
+	MOV WORD [DAP_PACKET.SIZE],	16	
+	MOV CX,				[STAGE_2_LEN]
+	MOV WORD [DAP_PACKET.COUNT],	CX
+	MOV CX,				[INITSEG]
+	MOV WORD [DAP_PACKET.SEGM],	0x0
+	MOV WORD [DAP_PACKET.OFFS],	CX
+	MOV CX,				[STAGE_2_LOC]
+	MOV WORD [DAP_PACKET.SECT0],	CX
+	MOV WORD [DAP_PACKET.SECT1],	0x0
+	MOV WORD [DAP_PACKET.SECT2],	0x0
+	MOV WORD [DAP_PACKET.SECT3],	0x0
 
+.READ_EXT:
 	MOV SI, DAP_PACKET
-	MOV AH, 0x42
-	INT 0x13
+	MOV AH, 42h
+	INT 13h
 	JC .BAD_READ
 
-	MOV SI, SEARCH
-	MOV DX, [MAGIC]
-	CMP DX, DI
-	JNE .LOOP
-	JMP 0:0xFFFF
-
-.LOOP:
-	ADD WORD [DAP_PACKET.SEG],0x1 
-	MOV BX, 0x90
-	CMP BX, WORD [DAP_PACKET.SEG]
-	JA  .NOT_FOUND
-	JMP .READ_EXT
+	MOV DX, WORD [MAGIC]
+	MOV SI, [INITSEG] 
+	MOV AX, WORD [SI]
+	xchg bx, bx
+	CMP DX, AX
+	JNE .BAD_MAGIC
+	MOV AX, [INITSEG]
+	JMP AX
 
 .BAD_READ:
 	MOV SI, READ_EXT
 	JMP PANIC
 
-.NOT_FOUND:
-	MOV SI, NOTFOUND
+.BAD_MAGIC:
+	MOV SI, MAGIC_EXT
 	JMP PANIC
 
-
-	; The bootload is moved to a normalized location in memory at 0x
-	; this will give 200 bytes to the stack for any possible expansion.
-	; We then copy the 2nd stage bootloader up to 0x120200 (200 bytes for
-	; the stack) and launch the 2nd stage bootloader at that location.
-
-	; Can we actually use the memory location 0x10000? This is just
-	; something I chose based on the LILO bootloader source code hoping
-	; this was safe enough to do in the bochs emulator and on a PC.
-
-	; Move the first stage bootloader to a location in memory and jump
-	CLD
-	CLI
-	MOV AX, BX		; load the current location
-	MOV SI, AX
-	MOV AX, INITSEG		; set the location that I want to jump too
-	MOV DI, AX
-	MOV CX, 256		; copy 256 words to that location
-	CLD
-	REP MOVSW
-
-	; do a long jmp to that location
-	JMP 0:0xffff
-
-
-
-	JMP $		; end of line
+FOREVER:
+	JMP FOREVER		; end of line
 
 CLEAR_SCREEN:
-	MOV AH, 0x06
+	MOV AH, 06h
 	XOR AL, AL
 	XOR CX, CX
-	MOV DX, 0x184F
-	MOV BH, 0x0F
-	INT 0x10
+	MOV DX, 0184Fh
+	MOV BH, 0Fh
+	INT 10h
 	
 	RET
 
@@ -125,18 +119,29 @@ PANIC:
 	PRINT SI
 	PRINT NL
 	XOR AX, AX
-	INT 0x16
-	JMP FAR 0xFFFF:0
+	INT 16h			; wait for keyboard interrupt
+	JMP FAR 0FFFFh:0
 
+; variables
+STAGE_2_LEN:	DW 1
+STAGE_2_LOC:	DW 1068		; TODO: We're going to figure this out at a later
+				; TODO: when we start to expand our kernel size
+				; TODO: the basic idea is that when you copy a file into the drive
+				; TODO: you can run 'sudo filefrag filename and it will give you the
+				; TODO: LBA address and the size
+				
+MAGIC:		DB 0C0h, 0DEh	; 0xC0DE
+INITSEG:	DW 1000h	; modifying this means modifying out stage 2
+
+; constants
 COPYRIGHT DB "Copyright 2024", 0x0D, 0x0A, 0x0
 START_BOOT_MSG DB "TDOS Bootload v0.1", 0x0D, 0x0A, 0x0
 NL DB 0x0D, 0x0A, 0x0
 PANIC_PREFIX DB "BOOT PANIC: ", 0x0
 
-TEST_EXT DB "-1", 0x0 
-READ_EXT DB "-2", 0x0
-SEARCH   DB "-3", 0x0
-NOTFOUND DB "-4", 0x0
+TEST_EXT	DB "-1",	0x0 
+READ_EXT	DB "-2",	0x0
+MAGIC_EXT	DB "-3",	0x0
 
 TIMES 510-($-$$) DB 0
 DW 0xAA55

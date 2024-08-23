@@ -8,6 +8,7 @@ image:
 	sudo mount -t vfat,fat=16 /dev/loop0 img
 	sudo mkdir -p img/BIOS/BOOT
 	sudo cp ../build/stage2.bin img/BIOS/BOOT/STAGE2.BIN
+	sudo filefrag -e img/BIOS/BOOT/STAGE2.BIN > ../build/stage_2_offset
 	sudo umount img
 	rmdir img
 	sudo losetup -D
