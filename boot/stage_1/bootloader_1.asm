@@ -15,19 +15,18 @@ ORG 0x600
 ; helpful macros
 INCLUDE '../inc/macros.mac'
 
-
 DAP_PACKET EQU 0800h		; 800 ensures we are above our 512 bytes
-VIRTUAL AT DAP_PACKET
-	DAP_PACKET.SIZE:	DW	?
-	DAP_PACKET.COUNT:	DW	? 	
-	DAP_PACKET.OFFS:	DW	?
-	DAP_PACKET.SEGM:	DW	?
-	DAP_PACKET.SECT0:	DW	?
-	DAP_PACKET.SECT1:	DW	?
-	DAP_PACKET.SECT2:	DW	?
-	DAP_PACKET.SECT3:	DW	?
-END VIRTUAL
 
+VIRTUAL AT DAP_PACKET
+	DAP_PACKET.SIZE		DW	0
+	DAP_PACKET.COUNT	DW	0 	
+	DAP_PACKET.OFFS		DW	0
+	DAP_PACKET.SEGM		DW	0
+	DAP_PACKET.SECT0	DW	0
+	DAP_PACKET.SECT1	DW	0
+	DAP_PACKET.SECT2	DW	0
+	DAP_PACKET.SECT3	DW	0
+END VIRTUAL
 START:
 	; relocate to a safer location
 	CLI			; clear interrupts
@@ -48,8 +47,6 @@ MAIN:
 	XOR BX, BX
 	XOR CX, CX
 
-	; Clear the screen and print the initial bootloader messages
-	CALL CLEAR_SCREEN
 
 	PRINT COPYRIGHT
 	PRINT START_BOOT_MSG
@@ -84,10 +81,10 @@ MAIN:
 	MOV DX, WORD [MAGIC]
 	MOV SI, [INITSEG] 
 	MOV AX, WORD [SI]
-	xchg bx, bx
 	CMP DX, AX
 	JNE .BAD_MAGIC
 	MOV AX, [INITSEG]
+	ADD AX, 4		; jump 4 to get past the magic words
 	JMP AX
 
 .BAD_READ:
@@ -101,15 +98,6 @@ MAIN:
 FOREVER:
 	JMP FOREVER		; end of line
 
-CLEAR_SCREEN:
-	MOV AH, 06h
-	XOR AL, AL
-	XOR CX, CX
-	MOV DX, 0184Fh
-	MOV BH, 0Fh
-	INT 10h
-	
-	RET
 
 ; include functions
 INCLUDE '../inc/printer.inc'
@@ -123,8 +111,8 @@ PANIC:
 	JMP FAR 0FFFFh:0
 
 ; variables
-STAGE_2_LEN:	DW 1
-STAGE_2_LOC:	DW 1068		; TODO: We're going to figure this out at a later
+STAGE_2_LEN:	DW 60
+STAGE_2_LOC:	DW 0xC0DE	; TODO: We're going to figure this out at a later
 				; TODO: when we start to expand our kernel size
 				; TODO: the basic idea is that when you copy a file into the drive
 				; TODO: you can run 'sudo filefrag filename and it will give you the
@@ -145,3 +133,4 @@ MAGIC_EXT	DB "-3",	0x0
 
 TIMES 510-($-$$) DB 0
 DW 0xAA55
+DW STAGE_2_LOC
