@@ -111,12 +111,8 @@ PANIC:
 	JMP FAR 0FFFFh:0
 
 ; variables
-STAGE_2_LEN:	DW 60
-STAGE_2_LOC:	DW 0xC0DE	; TODO: We're going to figure this out at a later
-				; TODO: when we start to expand our kernel size
-				; TODO: the basic idea is that when you copy a file into the drive
-				; TODO: you can run 'sudo filefrag filename and it will give you the
-				; TODO: LBA address and the size
+STAGE_2_LEN:	DW 36			; this is the size of the main.elf file in Kb
+STAGE_2_LOC:	DW 0xC0DE	;
 				
 MAGIC:		DB 0C0h, 0DEh	; 0xC0DE
 INITSEG:	DW 1000h	; modifying this means modifying out stage 2

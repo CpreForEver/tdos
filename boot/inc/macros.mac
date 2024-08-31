@@ -12,3 +12,15 @@ MACRO PRINT MSG {
 	END IF
 }
 
+MACRO GET_REAL {
+	use32
+		call near SET_REAL_MODE
+	use16
+}
+
+MACRO GET_PROT {
+	use16
+		call near SET_PROT_MODE
+	use32
+}
+

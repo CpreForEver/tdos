@@ -1,7 +1,6 @@
 
-
-
-
+use16
+; print string function for real mode
 PRINT_STRING:
 	LODSB
 	OR AL, AL

@@ -15,8 +15,9 @@ TMP_BUFFER = 0xC000
 ; 0x0700 - 0x07ff - Stack
 ; 0x1000 - 0x9fff - Stage 2 Code 
 ; 0xa000 - 0xafff - Boot Info
-; 0xb000 - 0xbfff - temp buffer
-; 0xc000 - 0xcfff - Kernel environment
+; 0xb000 - 0xbfff - kernel environment
+; 0xc000 - 0xcfff - temp buffer
+; 0xd000 - 0xdfff - Kernel environment
 
 MAGIC:	DW 0xDEC0, 0x0000 ; 0xC0DE
 
@@ -201,14 +202,13 @@ START:
 	MOV EAX, CR0
 	OR  EAX, 1
 	MOV CR0, EAX
-	JMP REALCODE - GDT_START:.PROTECTED_START
+	JMP 0x18:(.PROTECTED_START - $$ + 0x1000)
 	PRINT OK
 
 	USE32
 	.PROTECTED_START:
 	XOR EAX, EAX
-	xchg bx, bx
-	MOV AX, REALDATA - GDT_START
+	MOV AX, 0x20
 	MOV DS, AX
 	MOV ES, AX
 	MOV FS, AX
@@ -216,7 +216,7 @@ START:
 	MOV SS, AX
 	MOV ESP, 0x9000
 	MOV EBP, 0x9000
-	JMP cmain
+	JMP 0x18:cmain
 	
 	.JUMP_TO_KERNEL:
 
@@ -234,6 +234,7 @@ PANIC:
 	
 
 INCLUDE '../inc/printer.inc'
+INCLUDE '../inc/helpers.inc'
 
 MEMORY_MAPPING: DB "Building the Memory Map ", 0x0
 START_VGA: DB "Configuring VGA ", 0x0
@@ -255,12 +256,8 @@ REQUIRED_WIDTH = 800
 REQUIRED_HEIGHT = 600
 
 USE32
-ALIGN 8
-STACK_PTR:  dd  0
-
 ALIGN 16
 
-ALIGN 16
 GDT_START:
 NULLENTRY:
     DD 0x0      ; Limit [0..15]
@@ -292,20 +289,6 @@ PROTDATA:
     DB 0x00
     DB 0x92
     DB 0xCF
-    DB 0x00
-LONGCODE:
-    DW 0xFFFF
-    DW 0x0000
-    DB 0x00
-    DB 0x9A
-    DB 0xAF
-    DB 0x00
-LONGDATA:
-    DW 0xFFFF
-    DW 0x0000
-    DB 0x00
-    DB 0x92
-    DB 0xAF
     DB 0x00
 GDT_END:
 

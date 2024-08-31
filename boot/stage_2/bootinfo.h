@@ -27,7 +27,7 @@
  * but all map entries should be page aligned (1 << 12)
  * so the least significant 12bits are empty anyway
  */
-typedef struct {
+typedef struct __attribute((packed)){
   uint64 ptr;
   uint64 size;
 } mmap_entry;

@@ -1,5 +1,5 @@
 
-all: assm image
+all: clean assm image
 
 assm:
 	make -C boot all

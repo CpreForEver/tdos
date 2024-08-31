@@ -2,8 +2,13 @@
 
 #include "types.h"
 #include "bootinfo.h"
-#include "fonts_ttf.h"
+#include <stdarg.h>
 
+extern uint16 __line__;
+extern uint16 __column__;
+
+#define MAX_STRING_SIZE 256
 
 void fill();
-void print_char(int16 x, int16 y, char c);
+void printf(const char* format, ...);
+

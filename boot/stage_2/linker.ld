@@ -7,8 +7,8 @@ environment = 0xB000;
 
 SECTIONS
 {
-	PROVIDE (__executable_start = 0xc40);
-	. = 0xc40;
+	PROVIDE (__executable_start = 0x13c0);
+	. = 0x13c0;
 	.text	:
 	{
 		*(.text .stub .text.* .gnu.linkonce.t.*)

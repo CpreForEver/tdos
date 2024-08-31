@@ -2,7 +2,7 @@ OUTPUT_DIR = ../../build
 ENTRYPOINT_OBJ = main.o
 C_SRC_FILES = $(wildcard *.c)
 ASM_SRC_FILES = $(wildcard *.asm)
-C_OBJ_FILES = $(notdir $(patsubst %.c, %.o, $(C_SRC_FILES)))
+C_OBJ_FILES = $(filter-out main.o, $(notdir $(patsubst %.c, %.o, $(C_SRC_FILES))))
 ASM_OBJ_FILES = $(filter-out bootloader_2.o, $(notdir $(patsubst %.asm, %.o, $(ASM_SRC_FILES))))
 
 INC = -I../../src/include
@@ -19,12 +19,13 @@ start.bin:
 	mv start.bin $(OUTPUT_DIR)/start.bin
 
 
-main.elf: $(C_OBJ_FILES) $(ASM_OBJ_FILES) font.o
+main.elf: $(ENTRYPOINT_OBJ) $(C_OBJ_FILES) $(ASM_OBJ_FILES) font.o
 	@ld -melf_i386 -T linker.ld -nostdlib -o $@ $^
 	@mv main.elf $(OUTPUT_DIR)/main.elf
 
 font.o:
-	@llvm-objcopy -O elf32-i386 -I binary ../../fonts/font.ttf font.o
+	@llvm-objcopy -O elf32-i386 -I binary ../../fonts/console_font.psf font.o
+	#@llvm-objcopy -O elf32-i386 -I binary ../../fonts/font.ttf font_ttf.o
 
 %.o: %.c
 	@clang -O3 -ggdb -m32 -march=i386 -ffreestanding -masm=intel -mno-sse -Wall -Wextra $(INC) -c $<

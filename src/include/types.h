@@ -10,3 +10,8 @@ typedef char int8;
 typedef short int16;
 typedef long int32;
 typedef long long int64;
+
+typedef long BOOL;
+#define FALSE 0
+#define TRUE	1
+#define NULL	0 
